@@ -1,0 +1,36 @@
+# Streamlit Security Configuration
+
+[server]
+# SECURITY: Bind to localhost only (use reverse proxy for external access)
+address = "127.0.0.1"
+port = 8501
+headless = true
+
+# SECURITY: Disable CORS for localhost-only access
+enableCORS = false
+
+# SECURITY: Enable XSRF protection
+enableXsrfProtection = true
+
+# SECURITY: File upload limits (50MB max)
+maxUploadSize = 50
+maxMessageSize = 200
+
+# SECURITY: Run check for updates (keep dependencies current)
+runOnSave = false
+
+[browser]
+# SECURITY: Disable usage statistics collection
+gatherUsageStats = false
+
+# Server address shown to users
+serverAddress = "localhost"
+serverPort = 8501
+
+[theme]
+primaryColor = "#FF4B4B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"
+
