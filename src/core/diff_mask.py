@@ -2,8 +2,17 @@
 Difference mask generation - computes binary mask from two images
 """
 import numpy as np
-import cv2
 from typing import Tuple
+
+
+def _require_cv2():
+    try:
+        import cv2
+        return cv2
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "Missing dependency: cv2. Install 'opencv-python-headless' in your environment."
+        ) from exc
 
 
 def compute_diff_mask(img_a: np.ndarray, img_b: np.ndarray, threshold: float = 0.1) -> np.ndarray:
@@ -24,6 +33,8 @@ def compute_diff_mask(img_a: np.ndarray, img_b: np.ndarray, threshold: float = 0
     Returns:
         Binary mask (H, W) with 255 for differences, 0 for no difference
     """
+    cv2 = _require_cv2()
+
     # Ensure images have same dimensions
     if img_a.shape != img_b.shape:
         h_min = min(img_a.shape[0], img_b.shape[0])
@@ -60,4 +71,3 @@ def compute_diff_mask(img_a: np.ndarray, img_b: np.ndarray, threshold: float = 0
 def has_differences(mask: np.ndarray) -> bool:
     """Check if mask contains any differences"""
     return np.any(mask > 0)
-

@@ -2,8 +2,17 @@
 Region generation from difference mask - detects and merges regions
 """
 import numpy as np
-import cv2
 from typing import List, Tuple
+
+
+def _require_cv2():
+    try:
+        import cv2
+        return cv2
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "Missing dependency: cv2. Install 'opencv-python-headless' in your environment."
+        ) from exc
 
 
 def get_regions_from_mask(mask: np.ndarray, merge_distance: int = 50) -> List[Tuple[int, int, int, int]]:
@@ -22,6 +31,8 @@ def get_regions_from_mask(mask: np.ndarray, merge_distance: int = 50) -> List[Tu
     Returns:
         List of bounding boxes as (x, y, width, height)
     """
+    cv2 = _require_cv2()
+
     # Find connected components
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
     
@@ -149,4 +160,3 @@ def get_fallback_region(mask: np.ndarray) -> Tuple[int, int, int, int]:
     min_x, max_x = np.min(coords[1]), np.max(coords[1])
     
     return (min_x, min_y, max_x - min_x, max_y - min_y)
-

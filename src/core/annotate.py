@@ -2,8 +2,17 @@
 Annotation module - draws green overlay and red revision clouds
 """
 import numpy as np
-import cv2
 from typing import List, Tuple
+
+
+def _require_cv2():
+    try:
+        import cv2
+        return cv2
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "Missing dependency: cv2. Install 'opencv-python-headless' in your environment."
+        ) from exc
 
 
 def draw_revision_cloud_poly(
@@ -35,6 +44,8 @@ def draw_revision_cloud_poly(
     Returns:
         Image with revision cloud drawn (BGR format)
     """
+    cv2 = _require_cv2()
+
     x, y, w, h = rect
     x -= pad
     y -= pad
@@ -200,4 +211,3 @@ def annotate_images(img_a: np.ndarray, img_b: np.ndarray,
         img_a, img_b, mask, regions
     )
     return img_a_cloud, img_b_cloud
-
