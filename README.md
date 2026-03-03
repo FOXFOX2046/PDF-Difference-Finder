@@ -2,7 +2,7 @@
 
 A Streamlit application that compares PDF files and automatically highlights differences with revision clouds for engineering drawings and technical documents.
 
-**Repository:** [https://github.com/FOXFOX2046/PDF-Difference-Finder](https://github.com/FOXFOX2046/PDF-Difference-Finder)
+**[Live App](https://pdfdiffdiff.streamlit.app/)** · **Repository:** [GitHub](https://github.com/FOXFOX2046/PDF-Difference-Finder)
 
 ## Features
 
