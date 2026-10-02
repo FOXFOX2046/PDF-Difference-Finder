@@ -9,6 +9,17 @@ SINGLE_RESULT_KEYS = (
 BATCH_RESULT_KEYS = ("batch_results", "batch_zip_bytes", "batch_output_dir")
 
 
+def clear_uploads(state):
+    """Reset both modes and recreate upload widgets with empty file selections."""
+    generation = state.get('upload_generation', 0)
+    for key in (*SINGLE_RESULT_KEYS, *BATCH_RESULT_KEYS,
+                'single_upload_identity', 'batch_previous_files'):
+        state.pop(key, None)
+    for key in ('pdf_a', 'pdf_b', 'pdf_a_batch', 'pdf_b_batch'):
+        state.pop(f'{key}_{generation}', None)
+    state['upload_generation'] = generation + 1
+
+
 def upload_identity(uploaded_file):
     """Include content so replacing a file with the same name invalidates results."""
     return uploaded_file.name, hashlib.sha256(uploaded_file.getvalue()).hexdigest()

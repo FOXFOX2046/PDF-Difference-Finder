@@ -10,7 +10,7 @@ import zipfile
 from pathlib import Path
 from typing import List, Tuple, Dict
 
-from src.core.uploads import reset_results_on_upload_change, SINGLE_RESULT_KEYS, BATCH_RESULT_KEYS
+from src.core.uploads import clear_uploads, reset_results_on_upload_change, SINGLE_RESULT_KEYS, BATCH_RESULT_KEYS
 from src.core.pdf_render import pdf_to_images, get_pdf_page_count
 from src.core.diff_mask import compute_diff_mask, has_differences
 from src.core.regions import get_regions_from_mask, get_fallback_region
@@ -182,6 +182,14 @@ if _logo_path.exists():
 
 # Sidebar controls
 st.sidebar.header("Controls")
+st.sidebar.button(
+    "🔄 Refresh / Clear Uploads",
+    key="clear_uploads",
+    on_click=clear_uploads,
+    args=(st.session_state,),
+    help="Clear all uploaded PDFs, previews, and downloads in both modes.",
+)
+upload_generation = st.session_state.get('upload_generation', 0)
 
 # Processing mode selection
 processing_mode = st.sidebar.radio(
@@ -225,8 +233,8 @@ st.sidebar.info("Visual mode: ON (default)")
 # Main processing based on mode
 if processing_mode == "Single Pair":
     # Single pair mode (original functionality)
-    pdf_a = st.sidebar.file_uploader("PDF A (Original)", type=["pdf"], key="pdf_a")
-    pdf_b = st.sidebar.file_uploader("PDF B (Compare)", type=["pdf"], key="pdf_b")
+    pdf_a = st.sidebar.file_uploader("PDF A (Original)", type=["pdf"], key=f"pdf_a_{upload_generation}")
+    pdf_b = st.sidebar.file_uploader("PDF B (Compare)", type=["pdf"], key=f"pdf_b_{upload_generation}")
     
     reset_results_on_upload_change(
         st.session_state, "single_upload_identity",
@@ -463,13 +471,13 @@ else:
         "PDF A (Original)", 
         type=["pdf"], 
         accept_multiple_files=True,
-        key="pdf_a_batch"
+        key=f"pdf_a_batch_{upload_generation}"
     )
     pdf_b_files = st.sidebar.file_uploader(
         "PDF B (Compare)", 
         type=["pdf"], 
         accept_multiple_files=True,
-        key="pdf_b_batch"
+        key=f"pdf_b_batch_{upload_generation}"
     )
     
     current_files = reset_results_on_upload_change(

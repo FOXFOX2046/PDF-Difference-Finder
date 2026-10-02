@@ -30,7 +30,9 @@ class AppUploadTests(unittest.TestCase):
         self.addCleanup(self.patcher.stop)
 
     def uploader(self, label, **kwargs):
-        key = kwargs['key']
+        key, generation = kwargs['key'].rsplit('_', 1)
+        if int(generation) > 0:
+            return [] if key.endswith('_batch') else None
         if key.endswith('_batch'):
             file = self.files.get(key.removesuffix('_batch'))
             return [file] if file is not None else []
@@ -70,7 +72,7 @@ class AppUploadTests(unittest.TestCase):
         self.app.run()
         self.app.sidebar.radio[0].set_value('Batch Mode').run()
         for _ in range(2):
-            self.app.sidebar.button[0].click().run()
+            next(button for button in self.app.sidebar.button if button.label == '🚀 Process All Pairs').click().run()
             self.assert_success()
             self.assertTrue(self.app.session_state['batch_zip_bytes'].startswith(b'PK'))
             for file in self.files.values():
@@ -79,6 +81,23 @@ class AppUploadTests(unittest.TestCase):
         self.app.run()
         self.assert_success()
         self.assertNotIn('batch_zip_bytes', self.app.session_state)
+
+    def test_refresh_clears_both_modes(self):
+        self.app.run()
+        self.assert_success()
+        self.app.sidebar.radio[0].set_value('Batch Mode').run()
+        next(button for button in self.app.sidebar.button if button.label == '🚀 Process All Pairs').click().run()
+        self.assert_success()
+        self.assertIn('batch_zip_bytes', self.app.session_state)
+        self.app.sidebar.button(key='clear_uploads').click().run()
+        self.assert_success()
+        self.assertEqual(self.app.session_state['upload_generation'], 1)
+        self.assertNotIn('batch_zip_bytes', self.app.session_state)
+        self.assertNotIn('result', self.app.session_state)
+        self.app.sidebar.radio[0].set_value('Single Pair').run()
+        self.assert_success()
+        self.assertNotIn('processed', self.app.session_state)
+        self.assertTrue(any('Please upload two PDF files' in item.value for item in self.app.info))
 
 
 if __name__ == '__main__':
