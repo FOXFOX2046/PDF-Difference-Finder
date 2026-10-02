@@ -3,7 +3,7 @@ Export module - saves marked pages to PDF or PNG
 """
 import numpy as np
 from PIL import Image
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 from typing import List
 import zipfile
 import os

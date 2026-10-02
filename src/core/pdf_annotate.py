@@ -1,7 +1,7 @@
 """
 PDF annotation module - adds editable revision cloud annotations to PDF
 """
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 import numpy as np
 import math
 from typing import List, Tuple, Dict

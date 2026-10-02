@@ -64,7 +64,7 @@ PDF-Difference-Finder/
 ## Requirements
 
 - Python 3.8+
-- Streamlit 1.28+
+- Streamlit 1.64+
 - OpenCV, Pillow, PyMuPDF
 - Runs locally (no cloud/API needed)
 

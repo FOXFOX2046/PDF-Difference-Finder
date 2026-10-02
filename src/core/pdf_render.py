@@ -1,7 +1,7 @@
 """
 PDF rendering module - converts PDF pages to RGB images
 """
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 import numpy as np
 from PIL import Image
 from typing import List, Tuple, Optional

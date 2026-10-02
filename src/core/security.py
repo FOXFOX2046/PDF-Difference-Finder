@@ -81,7 +81,7 @@ def validate_page_count(pdf_path: str, max_pages: int = MAX_PDF_PAGES) -> int:
     Raises:
         SecurityError: If page count exceeds limit
     """
-    import fitz
+    import pymupdf as fitz
     
     try:
         doc = fitz.open(pdf_path)

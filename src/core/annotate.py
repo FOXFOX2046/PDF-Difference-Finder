@@ -152,18 +152,16 @@ def add_green_overlay(img_bgr: np.ndarray, mask: np.ndarray, alpha: float = 0.3)
     Returns:
         Image with green overlay (BGR format)
     """
-    result = img_bgr.copy()
-    
-    # Create green overlay (BGR format: B=0, G=255, R=0)
-    green_overlay = np.zeros_like(img_bgr)
-    green_overlay[:, :, 1] = 255  # Green channel in BGR
-    
-    # Apply overlay only where mask is non-zero
-    mask_3d = mask[:, :, np.newaxis] > 0
-    overlay_mask = mask_3d.astype(float) * alpha
-    
-    result = (result * (1 - overlay_mask) + green_overlay * overlay_mask).astype(np.uint8)
-    
+    # Use 256-value tables rather than several full-page float64 arrays.
+    # This preserves the original blend and truncation for each pixel value.
+    values = np.arange(256, dtype=np.float64)
+    darken = (values * (1 - alpha)).astype(np.uint8)
+    green = (values * (1 - alpha) + 255 * alpha).astype(np.uint8)
+    import cv2
+    table = np.stack((darken, green, darken), axis=-1).reshape(256, 1, 3)
+    result = cv2.LUT(img_bgr, table)
+    np.copyto(result, img_bgr, where=(mask == 0)[:, :, np.newaxis])
+
     return result
 
 

@@ -41,10 +41,7 @@ def process_pdf_pair(
     if pages_a == 0 or pages_b == 0:
         return None
     
-    # Process all pages
-    all_pages_a = pdf_to_images(pdf_a_path, dpi=dpi)
-    all_pages_b = pdf_to_images(pdf_b_path, dpi=dpi)
-    
+    # Render one pair at a time to avoid retaining every full-size source page.
     all_highlight_a = []
     all_highlight_b = []
     all_regions_a = []
@@ -52,9 +49,9 @@ def process_pdf_pair(
     all_dimensions_a = []
     all_dimensions_b = []
     
-    for i in range(min(len(all_pages_a), len(all_pages_b))):
-        page_img_a = all_pages_a[i]
-        page_img_b = all_pages_b[i]
+    for i in range(min(pages_a, pages_b)):
+        page_img_a = pdf_to_images(pdf_a_path, page_num=i, dpi=dpi)[0]
+        page_img_b = pdf_to_images(pdf_b_path, page_num=i, dpi=dpi)[0]
         page_mask = compute_diff_mask(page_img_a, page_img_b, threshold=sensitivity)
         page_regions = get_regions_from_mask(page_mask)
         
@@ -178,7 +175,7 @@ st.markdown("Compare PDF files and automatically highlight differences with revi
 # Sidebar app icon
 _logo_path = Path(__file__).resolve().parent / "MadFoxLogo.png"
 if _logo_path.exists():
-    st.sidebar.image(str(_logo_path), use_container_width=True)
+    st.sidebar.image(str(_logo_path), width="stretch")
 
 # Sidebar controls
 st.sidebar.header("Controls")
@@ -334,7 +331,7 @@ if processing_mode == "Single Pair":
                         st.subheader("PDF A (Original) - Green Highlight")
                         if 'img_a_highlight' in st.session_state:
                             img_rgb = cv2.cvtColor(st.session_state['img_a_highlight'], cv2.COLOR_BGR2RGB)
-                            st.image(img_rgb, use_container_width=True)
+                            st.image(img_rgb, width="stretch")
                         
                         if st.session_state['has_diff']:
                             st.success(f"✓ {len(st.session_state['regions'])} region(s) detected")
@@ -345,7 +342,7 @@ if processing_mode == "Single Pair":
                         st.subheader("PDF B (Compare) - Green Highlight")
                         if 'img_b_highlight' in st.session_state:
                             img_rgb = cv2.cvtColor(st.session_state['img_b_highlight'], cv2.COLOR_BGR2RGB)
-                            st.image(img_rgb, use_container_width=True)
+                            st.image(img_rgb, width="stretch")
                         
                         if st.session_state['has_diff']:
                             st.success(f"✓ {len(st.session_state['regions'])} region(s) detected")
@@ -634,11 +631,11 @@ else:
                             file_name="batch_results.zip",
                             mime="application/zip",
                             key="dl_batch_zip_main",
-                            use_container_width=True
+                            width="stretch"
                         )
                     
                     with col2:
-                        if st.button("🔄 Refresh Downloads", use_container_width=True):
+                        if st.button("🔄 Refresh Downloads", width="stretch"):
                             st.rerun()
                     
                     # Sidebar download section
