@@ -74,6 +74,18 @@ PDF-Difference-Finder/
 - Deploy to Streamlit Cloud, Docker, or any Python host
 - Default: `http://localhost:8501`
 
+For a reverse proxy or custom domain, set `STREAMLIT_BROWSER_SERVER_ADDRESS`
+to the public hostname and `STREAMLIT_BROWSER_SERVER_PORT` to the public port
+(usually `443` for HTTPS). Keep CORS and XSRF protection enabled. Community
+Cloud supplies its deployment settings; do not hardcode a localhost browser
+address in the shared configuration. Uploads are limited to 50 MB per PDF.
+
+## Verification
+
+Run the upload regression checks with `python -m unittest discover -s tests -v`.
+Uploads can be compared again after changing controls, and replacing a PDF
+with different content under the same filename clears the previous results.
+
 ## License
 
 See repository for details.

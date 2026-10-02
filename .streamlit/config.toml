@@ -1,13 +1,12 @@
 # Streamlit Security Configuration
 
 [server]
-# SECURITY: Bind to localhost only (use reverse proxy for external access)
-address = "127.0.0.1"
+# Let the deployment environment choose the listening address.
 port = 8501
 headless = true
 
-# SECURITY: Disable CORS for localhost-only access
-enableCORS = false
+# Keep CORS and XSRF protection enabled together.
+enableCORS = true
 
 # SECURITY: Enable XSRF protection
 enableXsrfProtection = true
@@ -23,9 +22,7 @@ runOnSave = false
 # SECURITY: Disable usage statistics collection
 gatherUsageStats = false
 
-# Server address shown to users
-serverAddress = "localhost"
-serverPort = 8501
+# Hosted environments supply their public browser address and port.
 
 [theme]
 base = "dark"

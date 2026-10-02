@@ -10,6 +10,7 @@ import zipfile
 from pathlib import Path
 from typing import List, Tuple, Dict
 
+from src.core.uploads import reset_results_on_upload_change, SINGLE_RESULT_KEYS, BATCH_RESULT_KEYS
 from src.core.pdf_render import pdf_to_images, get_pdf_page_count
 from src.core.diff_mask import compute_diff_mask, has_differences
 from src.core.regions import get_regions_from_mask, get_fallback_region
@@ -227,17 +228,23 @@ if processing_mode == "Single Pair":
     pdf_a = st.sidebar.file_uploader("PDF A (Original)", type=["pdf"], key="pdf_a")
     pdf_b = st.sidebar.file_uploader("PDF B (Compare)", type=["pdf"], key="pdf_b")
     
+    reset_results_on_upload_change(
+        st.session_state, "single_upload_identity",
+        ([pdf_a] if pdf_a is not None else [], [pdf_b] if pdf_b is not None else []),
+        SINGLE_RESULT_KEYS,
+    )
+
     if pdf_a is not None and pdf_b is not None:
         base_name_a = Path(pdf_a.name).stem
         base_name_b = Path(pdf_b.name).stem
         
         # Save uploaded files temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_a:
-            tmp_a.write(pdf_a.read())
+            tmp_a.write(pdf_a.getvalue())
             tmp_a_path = tmp_a.name
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_b:
-            tmp_b.write(pdf_b.read())
+            tmp_b.write(pdf_b.getvalue())
             tmp_b_path = tmp_b.name
         
         try:
@@ -245,7 +252,7 @@ if processing_mode == "Single Pair":
             pages_b = get_pdf_page_count(tmp_b_path)
             max_pages = max(pages_a, pages_b)
             
-            if max_pages == 0:
+            if pages_a == 0 or pages_b == 0:
                 st.error("One or both PDFs have no pages")
             else:
                 # Page selector
@@ -263,6 +270,10 @@ if processing_mode == "Single Pair":
                         process_page = False
                 
                 if process_page:
+                    # A failed page load must not display the previous preview or exports.
+                    for key in SINGLE_RESULT_KEYS:
+                        if key not in ('page_selector', 'last_page', 'last_sensitivity'):
+                            st.session_state.pop(key, None)
                     st.session_state['last_page'] = selected_page
                     st.session_state['last_sensitivity'] = sensitivity
                     
@@ -434,8 +445,14 @@ if processing_mode == "Single Pair":
                         except:
                             pass
         
+        except Exception as e:
+            for key in SINGLE_RESULT_KEYS:
+                if key != "page_selector":
+                    st.session_state.pop(key, None)
+            st.error(f"Unable to compare uploaded PDFs: {e}. Please upload readable, unencrypted PDFs.")
         finally:
-            pass
+            Path(tmp_a_path).unlink(missing_ok=True)
+            Path(tmp_b_path).unlink(missing_ok=True)
     
     else:
         st.info("👆 Please upload two PDF files to begin comparison")
@@ -455,22 +472,12 @@ else:
         key="pdf_b_batch"
     )
     
+    current_files = reset_results_on_upload_change(
+        st.session_state, "batch_previous_files",
+        (pdf_a_files, pdf_b_files), BATCH_RESULT_KEYS,
+    )
+
     if pdf_a_files and pdf_b_files:
-        # Clear previous results if files changed
-        if 'batch_previous_files' not in st.session_state:
-            st.session_state['batch_previous_files'] = None
-        
-        current_files = (tuple(f.name for f in pdf_a_files), tuple(f.name for f in pdf_b_files))
-        if st.session_state['batch_previous_files'] != current_files:
-            # Files changed, clear old results
-            if 'batch_results' in st.session_state:
-                del st.session_state['batch_results']
-            if 'batch_zip_bytes' in st.session_state:
-                del st.session_state['batch_zip_bytes']
-            if 'batch_output_dir' in st.session_state:
-                del st.session_state['batch_output_dir']
-            st.session_state['batch_previous_files'] = current_files
-        
         if len(pdf_a_files) != len(pdf_b_files):
             st.warning(f"⚠️ Warning: PDF A has {len(pdf_a_files)} file(s), PDF B has {len(pdf_b_files)} file(s). They will be paired sequentially.")
         
@@ -496,11 +503,11 @@ else:
                     
                     # Save files temporarily
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_a:
-                        tmp_a.write(pdf_a_file.read())
+                        tmp_a.write(pdf_a_file.getvalue())
                         tmp_a_path = tmp_a.name
                     
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_b:
-                        tmp_b.write(pdf_b_file.read())
+                        tmp_b.write(pdf_b_file.getvalue())
                         tmp_b_path = tmp_b.name
                     
                     try:
@@ -523,18 +530,14 @@ else:
                                 'num_regions_b': sum(len(r) for r in result['regions_b'])
                             })
                         
-                        # Cleanup temp PDF files
-                        try:
-                            os.unlink(tmp_a_path)
-                            os.unlink(tmp_b_path)
-                        except:
-                            pass
-                    
                     except Exception as e:
                         st.error(f"Error processing pair {pair_idx + 1}: {e}")
                         import traceback
                         st.text(traceback.format_exc())
-                    
+                    finally:
+                        Path(tmp_a_path).unlink(missing_ok=True)
+                        Path(tmp_b_path).unlink(missing_ok=True)
+
                     progress_bar.progress((pair_idx + 1) / num_pairs)
                 
                 status_text.text("✅ Processing complete!")
@@ -574,7 +577,7 @@ else:
                                 st.session_state['batch_zip_bytes'] = zip_bytes
                                 st.session_state['batch_output_dir'] = output_dir
                                 # Update previous files to prevent clearing results
-                                st.session_state['batch_previous_files'] = (tuple(f.name for f in pdf_a_files), tuple(f.name for f in pdf_b_files))
+                                st.session_state['batch_previous_files'] = current_files
                                 
                                 # Display results summary
                                 st.success(f"✅ Successfully processed {len(all_results)} pair(s). ZIP file size: {len(zip_bytes) / 1024:.1f} KB")
